@@ -33,6 +33,26 @@ export class User {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  // Daily practice streak
+  @Prop({ default: 0 })
+  currentStreak: number;
+
+  @Prop({ default: 0 })
+  longestStreak: number;
+
+  @Prop({ type: Date })
+  lastPracticeDate?: Date;
+
+  @Prop({ default: 0 })
+  todayWordsPracticed: number;
+
+  @Prop({ default: 5 })
+  dailyGoal: number;
+
+  // Tracks which phonemes the student struggles with most
+  @Prop({ type: Map, of: Number, default: {} })
+  weakPhonemes: Map<string, number>;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

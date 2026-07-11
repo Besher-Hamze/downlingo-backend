@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, Min, Max, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, Min, Max, IsOptional, IsBoolean, IsArray } from 'class-validator';
 
 export class CreateProgressDto {
   @IsString()
@@ -29,5 +29,10 @@ export class CreateProgressDto {
   @IsOptional()
   @IsBoolean()
   isCompleted?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  missingPhonemes?: string[];
 }
 

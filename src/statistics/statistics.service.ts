@@ -108,6 +108,7 @@ export class StatisticsService {
       averageAccuracy,
       byLevel: Object.values(byLevel),
       recentProgress: progress.slice(-10).reverse(),
+      engagement: await this.usersService.getEngagement(studentId),
     };
   }
 

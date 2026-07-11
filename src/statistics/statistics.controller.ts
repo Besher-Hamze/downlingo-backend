@@ -32,9 +32,15 @@ export class StatisticsController {
       ...createProgressDto,
       studentId,
     });
+
+    const engagement = await this.usersService.updateEngagementOnPractice(
+      studentId,
+      createProgressDto.missingPhonemes,
+    );
     
     return {
       ...(progress as any).toObject ? (progress as any).toObject() : progress,
+      engagement,
       message: 'Progress recorded successfully',
     };
   }
@@ -106,6 +112,13 @@ export class StatisticsController {
   @Roles(UserRole.STUDENT)
   getMyStatistics(@CurrentUser() user: any) {
     return this.statisticsService.getStudentStatistics(user.userId);
+  }
+
+  @Get('streak')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.STUDENT)
+  async getMyStreak(@CurrentUser() user: any) {
+    return this.usersService.getEngagement(user.userId);
   }
 }
 
