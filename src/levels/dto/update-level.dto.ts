@@ -1,4 +1,5 @@
-import { IsString, IsNumber, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsBoolean, IsEnum } from 'class-validator';
+import { LevelType } from '../schemas/level.schema';
 
 export class UpdateLevelDto {
   @IsOptional()
@@ -28,6 +29,10 @@ export class UpdateLevelDto {
   @IsOptional()
   @IsString()
   language?: string;
+
+  @IsOptional()
+  @IsEnum(LevelType)
+  levelType?: LevelType;
 
   @IsOptional()
   @IsBoolean()
