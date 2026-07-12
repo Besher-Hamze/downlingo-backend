@@ -958,6 +958,7 @@ function getLevelForm(level = null) {
                     <option value="story" ${level?.levelType === 'story' ? 'selected' : ''}>Story</option>
                     <option value="shapes" ${level?.levelType === 'shapes' ? 'selected' : ''}>Shapes</option>
                     <option value="colors" ${level?.levelType === 'colors' ? 'selected' : ''}>Colors</option>
+                    <option value="emotions" ${level?.levelType === 'emotions' ? 'selected' : ''}>Emotions</option>
                 </select>
             </div>
             <div class="form-actions">
@@ -1653,6 +1654,7 @@ function getActivityForm(defaultType = 'shapes') {
                 <select name="type" required>
                     <option value="shapes" ${defaultType === 'shapes' ? 'selected' : ''}>Shapes</option>
                     <option value="colors" ${defaultType === 'colors' ? 'selected' : ''}>Colors</option>
+                    <option value="emotions" ${defaultType === 'emotions' ? 'selected' : ''}>Emotions</option>
                 </select>
             </div>
             <div class="form-group"><label>Title (English) *</label><input type="text" name="title" required></div>

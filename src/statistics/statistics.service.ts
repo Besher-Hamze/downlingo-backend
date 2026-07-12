@@ -80,9 +80,15 @@ export class StatisticsService {
         ? progress.reduce((sum, p) => sum + p.accuracy, 0) / progress.length
         : 0;
 
-    // Group by level
+    // Group by level (skip records with missing levelId)
     const byLevel = progress.reduce((acc, p) => {
-      const levelId = p.levelId.toString();
+      const levelId = p.levelId
+        ? (typeof p.levelId === 'object'
+            ? (p.levelId as any)._id?.toString() ?? (p.levelId as any).id?.toString()
+            : p.levelId.toString())
+        : null;
+      if (!levelId) return acc;
+
       if (!acc[levelId]) {
         acc[levelId] = {
           levelId: p.levelId,
@@ -100,7 +106,14 @@ export class StatisticsService {
 
     // Calculate average accuracy per level
     Object.keys(byLevel).forEach((levelId) => {
-      const levelProgress = progress.filter((p) => p.levelId.toString() === levelId);
+      const levelProgress = progress.filter((p) => {
+        if (!p.levelId) return false;
+        const id =
+          typeof p.levelId === 'object'
+            ? (p.levelId as any)._id?.toString() ?? (p.levelId as any).id?.toString()
+            : p.levelId.toString();
+        return id === levelId;
+      });
       byLevel[levelId].averageAccuracy =
         levelProgress.length > 0
           ? levelProgress.reduce((sum, p) => sum + p.accuracy, 0) / levelProgress.length
