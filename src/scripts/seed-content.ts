@@ -47,6 +47,7 @@ async function seedContent() {
       { key: 'en-colors-1', name: 'Colors Fun', description: 'Pick the right color', levelNumber: 4, requiredPoints: 75, icon: '🎨', color: '#FF9800', language: 'english', levelType: LevelType.COLORS },
       { key: 'en-speech-2', name: 'More Words', description: 'Practice more words', levelNumber: 5, requiredPoints: 100, icon: '🗣️', color: '#7B1FA2', language: 'english', levelType: LevelType.SPEECH },
       { key: 'en-emotions-1', name: 'Feelings Friends', description: 'Learn happy, sad, and more feelings', levelNumber: 6, requiredPoints: 125, icon: '😊', color: '#E91E63', language: 'english', levelType: LevelType.EMOTIONS },
+      { key: 'en-hunt-1', name: 'Find & See', description: 'Use camera to find real objects', levelNumber: 7, requiredPoints: 150, icon: '📷', color: '#4CAF50', language: 'english', levelType: LevelType.HUNT },
       // Arabic levels
       { key: 'ar-speech-1', name: 'كلمات أولى', description: 'كلمات يومية بسيطة', levelNumber: 1, requiredPoints: 0, icon: '🗣️', color: '#9C27B0', language: 'arabic', levelType: LevelType.SPEECH },
       { key: 'ar-story-1', name: 'قصص جميلة', description: 'اقرأ القصة وأجب بالنطق', levelNumber: 2, requiredPoints: 25, icon: '📖', color: '#FF4081', language: 'arabic', levelType: LevelType.STORY },
@@ -54,6 +55,7 @@ async function seedContent() {
       { key: 'ar-colors-1', name: 'ألوان مرحة', description: 'اختر اللون الصحيح', levelNumber: 4, requiredPoints: 75, icon: '🎨', color: '#FF9800', language: 'arabic', levelType: LevelType.COLORS },
       { key: 'ar-speech-2', name: 'كلمات أكثر', description: 'تمرين كلمات إضافية', levelNumber: 5, requiredPoints: 100, icon: '🗣️', color: '#7B1FA2', language: 'arabic', levelType: LevelType.SPEECH },
       { key: 'ar-emotions-1', name: 'تعرف على المشاعر', description: 'تعلّم السعيد والحزين والمزيد', levelNumber: 6, requiredPoints: 125, icon: '😊', color: '#E91E63', language: 'arabic', levelType: LevelType.EMOTIONS },
+      { key: 'ar-hunt-1', name: 'دور واشوف', description: 'استخدم الكاميرا لتجد أشياء حقيقية', levelNumber: 7, requiredPoints: 150, icon: '📷', color: '#4CAF50', language: 'arabic', levelType: LevelType.HUNT },
     ];
 
     console.log('📚 Creating levels...');
@@ -317,6 +319,51 @@ async function seedContent() {
       }
     }
 
+    const huntActivities = [
+      { key: 'en-hunt-1', items: [
+        { title: 'Find Apple', titleAr: 'دور على تفاحة', prompt: 'Point camera at an apple!', promptAr: 'وجّه الكاميرا نحو تفاحة!', correct: 'apple', mlLabels: ['apple', 'fruit', 'food', 'plant'], icon: '🍎', label: 'Apple', labelAr: 'تفاحة' },
+        { title: 'Find Orange', titleAr: 'دور على برتقالة', prompt: 'Point camera at an orange!', promptAr: 'وجّه الكاميرا نحو برتقالة!', correct: 'orange', mlLabels: ['orange', 'fruit', 'citrus fruit', 'food'], icon: '🍊', label: 'Orange', labelAr: 'برتقالة' },
+        { title: 'Find Banana', titleAr: 'دور على موزة', prompt: 'Point camera at a banana!', promptAr: 'وجّه الكاميرا نحو موزة!', correct: 'banana', mlLabels: ['banana', 'fruit', 'food'], icon: '🍌', label: 'Banana', labelAr: 'موزة' },
+        { title: 'Find Cup', titleAr: 'دور على كوب', prompt: 'Point camera at a cup!', promptAr: 'وجّه الكاميرا نحو كوب!', correct: 'cup', mlLabels: ['cup', 'mug', 'coffee cup', 'drinkware'], icon: '☕', label: 'Cup', labelAr: 'كوب' },
+        { title: 'Find Book', titleAr: 'دور على كتاب', prompt: 'Point camera at a book!', promptAr: 'وجّه الكاميرا نحو كتاب!', correct: 'book', mlLabels: ['book', 'publication', 'literature'], icon: '📚', label: 'Book', labelAr: 'كتاب' },
+        { title: 'Find Bottle', titleAr: 'دور على زجاجة', prompt: 'Point camera at a bottle!', promptAr: 'وجّه الكاميرا نحو زجاجة!', correct: 'bottle', mlLabels: ['bottle', 'water bottle', 'drink'], icon: '🍼', label: 'Bottle', labelAr: 'زجاجة' },
+      ]},
+      { key: 'ar-hunt-1', lang: 'arabic', items: [
+        { title: 'تفاحة', titleAr: 'دور على تفاحة', prompt: 'وجّه الكاميرا نحو تفاحة', promptAr: 'وجّه الكاميرا نحو تفاحة', correct: 'apple', mlLabels: ['apple', 'fruit', 'food', 'plant'], icon: '🍎', label: 'تفاحة', labelAr: 'تفاحة' },
+        { title: 'برتقالة', titleAr: 'دور على برتقالة', prompt: 'وجّه الكاميرا نحو برتقالة', promptAr: 'وجّه الكاميرا نحو برتقالة', correct: 'orange', mlLabels: ['orange', 'fruit', 'citrus fruit', 'food'], icon: '🍊', label: 'برتقالة', labelAr: 'برتقالة' },
+        { title: 'موزة', titleAr: 'دور على موزة', prompt: 'وجّه الكاميرا نحو موزة', promptAr: 'وجّه الكاميرا نحو موزة', correct: 'banana', mlLabels: ['banana', 'fruit', 'food'], icon: '🍌', label: 'موزة', labelAr: 'موزة' },
+        { title: 'كوب', titleAr: 'دور على كوب', prompt: 'وجّه الكاميرا نحو كوب', promptAr: 'وجّه الكاميرا نحو كوب', correct: 'cup', mlLabels: ['cup', 'mug', 'coffee cup', 'drinkware'], icon: '☕', label: 'كوب', labelAr: 'كوب' },
+        { title: 'كتاب', titleAr: 'دور على كتاب', prompt: 'وجّه الكاميرا نحو كتاب', promptAr: 'وجّه الكاميرا نحو كتاب', correct: 'book', mlLabels: ['book', 'publication', 'literature'], icon: '📚', label: 'كتاب', labelAr: 'كتاب' },
+        { title: 'زجاجة', titleAr: 'دور على زجاجة', prompt: 'وجّه الكاميرا نحو زجاجة', promptAr: 'وجّه الكاميرا نحو زجاجة', correct: 'bottle', mlLabels: ['bottle', 'water bottle', 'drink'], icon: '🍼', label: 'زجاجة', labelAr: 'زجاجة' },
+      ]},
+    ];
+
+    console.log('📷 Creating hunt (camera) activities...');
+    for (const group of huntActivities) {
+      let order = 1;
+      for (const item of group.items) {
+        await activitiesService.create({
+          type: ActivityType.HUNT,
+          title: item.title,
+          titleAr: item.titleAr,
+          levelId: levels[group.key],
+          language: (group as any).lang || 'english',
+          order: order++,
+          points: 12,
+          cognitiveCategory: CognitiveCategory.VISUAL,
+          content: {
+            prompt: item.prompt,
+            promptAr: item.promptAr,
+            correctAnswer: item.correct,
+            options: item.mlLabels,
+            optionIcons: [item.icon],
+            optionLabels: [item.label],
+            optionLabelsAr: [item.labelAr],
+          },
+        } as any);
+      }
+    }
+
     const demoEmail = 'student@downlingo.com';
     if (!(await usersService.findByEmail(demoEmail))) {
       await usersService.create({
@@ -328,7 +375,7 @@ async function seedContent() {
       console.log('👤 Demo: student@downlingo.com / student123');
     }
 
-    console.log('✅ Seed complete! 12 levels, 28 words, 6 stories, 16 shapes/colors, 16 emotions');
+    console.log('✅ Seed complete! 14 levels, 28 words, 6 stories, 16 shapes/colors, 16 emotions, 12 hunt');
   } catch (error: any) {
     console.error('❌', error.message);
   } finally {

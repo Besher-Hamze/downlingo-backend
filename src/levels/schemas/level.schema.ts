@@ -9,6 +9,7 @@ export enum LevelType {
   SHAPES = 'shapes',
   COLORS = 'colors',
   EMOTIONS = 'emotions',
+  HUNT = 'hunt',
 }
 
 @Schema({ timestamps: true })

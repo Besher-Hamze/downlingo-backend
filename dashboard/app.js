@@ -959,6 +959,7 @@ function getLevelForm(level = null) {
                     <option value="shapes" ${level?.levelType === 'shapes' ? 'selected' : ''}>Shapes</option>
                     <option value="colors" ${level?.levelType === 'colors' ? 'selected' : ''}>Colors</option>
                     <option value="emotions" ${level?.levelType === 'emotions' ? 'selected' : ''}>Emotions</option>
+                    <option value="hunt" ${level?.levelType === 'hunt' ? 'selected' : ''}>Hunt (Camera)</option>
                 </select>
             </div>
             <div class="form-actions">

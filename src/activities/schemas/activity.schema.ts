@@ -8,6 +8,7 @@ export enum ActivityType {
   SHAPES = 'shapes',
   COLORS = 'colors',
   EMOTIONS = 'emotions',
+  HUNT = 'hunt',
 }
 
 export enum CognitiveCategory {
