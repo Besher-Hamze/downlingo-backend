@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { WordsModule } from './words/words.module';
 import { LevelsModule } from './levels/levels.module';
 import { StatisticsModule } from './statistics/statistics.module';
+import { ActivitiesModule } from './activities/activities.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { StatisticsModule } from './statistics/statistics.module';
     WordsModule,
     LevelsModule,
     StatisticsModule,
+    ActivitiesModule,
   ],
 })
 export class AppModule {}

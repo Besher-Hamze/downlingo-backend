@@ -140,8 +140,11 @@ async function loadSectionData(section) {
         case 'words':
             await loadWords();
             break;
-        case 'exercises':
-            await loadExercises();
+        case 'activities':
+            await loadActivities();
+            break;
+        case 'stories':
+            await loadStories();
             break;
         case 'users':
             await loadUsers();
@@ -158,16 +161,18 @@ async function loadSectionData(section) {
 // Dashboard Stats
 async function loadDashboardStats() {
     try {
-        const [levels, words, users] = await Promise.all([
+        const [levels, words, users, activities] = await Promise.all([
             apiRequest('/levels'),
             apiRequest('/words'),
             apiRequest('/users'),
+            apiRequest('/activities/admin/all').catch(() => []),
         ]);
         
         document.getElementById('totalLevels').textContent = levels.length || 0;
         document.getElementById('totalWords').textContent = words.length || 0;
         document.getElementById('totalUsers').textContent = users.length || 0;
-        document.getElementById('totalProgress').textContent = 'N/A';
+        document.getElementById('totalActivities').textContent = activities.length || 0;
+        document.getElementById('totalProgress').textContent = activities.length + words.length;
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
     }
@@ -267,10 +272,169 @@ async function loadWords() {
     }
 }
 
-// Load Exercises (same as words for now)
-async function loadExercises() {
-    await loadWords(); // Exercises are words in this system
-    document.getElementById('exercisesTableBody').innerHTML = document.getElementById('wordsTableBody').innerHTML;
+// Load Activities (shapes & colors)
+let allActivitiesCache = [];
+let activityFilter = 'all';
+
+async function loadActivities() {
+    try {
+        allActivitiesCache = await apiRequest('/activities/admin/all');
+        renderActivitiesTable();
+    } catch (error) {
+        document.getElementById('activitiesTableBody').innerHTML =
+            '<tr><td colspan="6" class="loading">Error loading activities</td></tr>';
+    }
+}
+
+function filterActivities(type) {
+    activityFilter = type;
+    renderActivitiesTable();
+}
+
+async function renderActivitiesTable() {
+    const tbody = document.getElementById('activitiesTableBody');
+    const levels = await apiRequest('/levels');
+    const levelMap = {};
+    levels.forEach(l => { levelMap[l._id || l.id] = l.name; });
+
+    let items = allActivitiesCache.filter(a => a.type !== 'story');
+    if (activityFilter !== 'all') {
+        items = items.filter(a => a.type === activityFilter);
+    }
+
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="loading">No activities found. Run npm run seed:content</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = items.map(a => `
+        <tr>
+            <td><strong>${a.title}</strong><br><small>${a.titleAr || ''}</small></td>
+            <td><span class="status-badge active">${a.type}</span></td>
+            <td>${a.cognitiveCategory || '-'}</td>
+            <td>${levelMap[a.levelId] || '-'}</td>
+            <td>${a.points}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn-danger" onclick="deleteActivity('${a._id || a.id}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Load Stories
+async function loadStories() {
+    try {
+        const all = await apiRequest('/activities/admin/all');
+        const stories = all.filter(a => a.type === 'story');
+        const tbody = document.getElementById('storiesTableBody');
+
+        if (stories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="loading">No stories found. Run npm run seed:content</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = stories.map(s => `
+            <tr>
+                <td><strong>${s.title}</strong><br><small>${s.titleAr || ''}</small></td>
+                <td>${s.content?.pages?.length || 0} pages</td>
+                <td>${s.content?.questions?.length || 0} questions</td>
+                <td>${s.cognitiveCategory || 'comprehension'}</td>
+                <td>${s.points}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-danger" onclick="deleteActivity('${s._id || s.id}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        document.getElementById('storiesTableBody').innerHTML =
+            '<tr><td colspan="6" class="loading">Error loading stories</td></tr>';
+    }
+}
+
+async function deleteActivity(id) {
+    if (!confirm('Delete this activity?')) return;
+    try {
+        await apiRequest(`/activities/${id}`, { method: 'DELETE' });
+        showToast('Activity deleted');
+        loadActivities();
+        loadStories();
+    } catch (e) { /* handled */ }
+}
+
+// Load Statistics - Cognitive Profiles
+async function loadStatistics() {
+    const container = document.getElementById('statisticsContent');
+    try {
+        const users = await apiRequest('/users');
+        const students = users.filter(u => u.role === 'student');
+
+        if (students.length === 0) {
+            container.innerHTML = '<div class="loading">No students found</div>';
+            return;
+        }
+
+        let html = '<div class="students-grid">';
+
+        for (const student of students) {
+            const id = student._id || student.id;
+            try {
+                const profile = await apiRequest(`/statistics/student/${id}/cognitive-profile`);
+                const weaknessColors = {
+                    strong: '#4CAF50', mild: '#FF9800',
+                    moderate: '#FF5722', needs_focus: '#D50000'
+                };
+
+                html += `
+                    <div class="student-card" style="text-align:left;">
+                        <div class="student-header">
+                            <div class="student-avatar"><i class="fas fa-user-graduate"></i></div>
+                            <div class="student-info">
+                                <h3>${student.name}</h3>
+                                <p>${student.email}</p>
+                            </div>
+                        </div>
+                        <h4 style="margin:1rem 0 0.5rem;">Cognitive Profile</h4>
+                        ${(profile.profile || []).map(p => `
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin:0.4rem 0;">
+                                <span style="text-transform:capitalize;">${p.category}</span>
+                                <span class="status-badge" style="background:${weaknessColors[p.level] || '#999'}">
+                                    ${p.level.replace('_', ' ')} (${p.score})
+                                </span>
+                            </div>
+                        `).join('')}
+                        ${profile.primaryWeakness ? `
+                            <p style="margin-top:0.8rem;color:var(--warning);font-weight:600;">
+                                ⚠️ Primary focus: ${profile.primaryWeakness}
+                            </p>
+                        ` : '<p style="margin-top:0.8rem;color:var(--success);">✅ No major weaknesses yet</p>'}
+                        <h4 style="margin:1rem 0 0.5rem;">Recommendations</h4>
+                        <ul style="padding-left:1.2rem;color:var(--text-secondary);">
+                            ${(profile.recommendations || []).map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                        <div style="margin-top:1rem;display:flex;gap:1rem;">
+                            <div><strong>${profile.speechStats?.completedWords || 0}</strong> words done</div>
+                            <div><strong>${profile.speechStats?.totalPoints || 0}</strong> points</div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                html += `<div class="student-card"><p>No data for ${student.name}</p></div>`;
+            }
+        }
+
+        html += '</div>';
+        container.innerHTML = html;
+    } catch (error) {
+        container.innerHTML = '<div class="loading">Error loading statistics</div>';
+    }
 }
 
 // Load Users
@@ -325,11 +489,8 @@ async function loadUsers() {
     }
 }
 
-// Load Statistics
-async function loadStatistics() {
-    // Placeholder for statistics
-    showToast('Statistics feature coming soon', 'info');
-}
+// Load Statistics - replaced below with cognitive profiles
+// (see loadStatistics function after loadActivities)
 
 // Load Family Dashboard
 async function loadFamilyDashboard() {
@@ -695,7 +856,6 @@ async function openAddModal(section) {
             break;
         case 'users':
             modalBody.innerHTML = getUserForm();
-            // After form is inserted, ensure "Link to Family" shows ONLY when student role is selected
             setTimeout(() => {
                 const roleSelect = document.getElementById('userRoleSelect');
                 const linkedFamilyGroup = document.getElementById('linkedFamilyGroup');
@@ -737,6 +897,14 @@ async function openAddModal(section) {
                     }
                 }
             }, 300);
+            break;
+        case 'activities':
+            modalBody.innerHTML = getActivityForm('shapes');
+            await loadLevelsIntoSelect('activityLevelSelect');
+            break;
+        case 'stories':
+            modalBody.innerHTML = getStoryForm();
+            await loadLevelsIntoSelect('storyLevelSelect');
             break;
     }
     
@@ -1451,6 +1619,130 @@ document.getElementById('modal').addEventListener('click', (e) => {
 document.getElementById('closeModal').addEventListener('click', closeModal);
 
 // Initialize
+async function loadLevelsIntoSelect(selectId) {
+    try {
+        const levels = await apiRequest('/levels');
+        const select = document.getElementById(selectId);
+        if (select) {
+            select.innerHTML = '<option value="">Select Level</option>';
+            levels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level._id || level.id;
+                option.textContent = level.name;
+                select.appendChild(option);
+            });
+        }
+    } catch (e) { console.error(e); }
+}
+
+function getActivityForm(defaultType = 'shapes') {
+    return `
+        <form id="activityForm" onsubmit="saveActivity(event)">
+            <div class="form-group">
+                <label>Type *</label>
+                <select name="type" required>
+                    <option value="shapes" ${defaultType === 'shapes' ? 'selected' : ''}>Shapes</option>
+                    <option value="colors" ${defaultType === 'colors' ? 'selected' : ''}>Colors</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Title (English) *</label><input type="text" name="title" required></div>
+            <div class="form-group"><label>Title (Arabic)</label><input type="text" name="titleAr"></div>
+            <div class="form-group"><label>Level</label><select name="levelId" id="activityLevelSelect"></select></div>
+            <div class="form-group"><label>Prompt *</label><input type="text" name="prompt" required></div>
+            <div class="form-group"><label>Correct Answer *</label><input type="text" name="correctAnswer" required></div>
+            <div class="form-group"><label>Options (comma-separated) *</label><input type="text" name="options" required></div>
+            <div class="form-group"><label>Icons (emoji or #hex, comma-separated) *</label><input type="text" name="optionIcons" required></div>
+            <div class="form-group"><label>Labels (comma-separated) *</label><input type="text" name="optionLabels" required></div>
+            <div class="form-group"><label>Points</label><input type="number" name="points" value="10"></div>
+            <div class="form-group">
+                <label>Category</label>
+                <select name="cognitiveCategory">
+                    <option value="visual">Visual</option>
+                    <option value="memory">Memory</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Save</button>
+            </div>
+        </form>
+    `;
+}
+
+function getStoryForm() {
+    return `
+        <form id="storyForm" onsubmit="saveStory(event)">
+            <div class="form-group"><label>Title *</label><input type="text" name="title" required></div>
+            <div class="form-group"><label>Title (Arabic)</label><input type="text" name="titleAr"></div>
+            <div class="form-group"><label>Level</label><select name="levelId" id="storyLevelSelect"></select></div>
+            <div class="form-group"><label>Pages (one per line) *</label><textarea name="pages" rows="4" required></textarea></div>
+            <div class="form-group"><label>Questions JSON *</label>
+                <textarea name="questionsJson" rows="5" required>[{"prompt":"Question?","options":["A","B"],"correctIndex":0}]</textarea>
+            </div>
+            <div class="form-group"><label>Points</label><input type="number" name="points" value="15"></div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Save</button>
+            </div>
+        </form>
+    `;
+}
+
+async function saveActivity(event) {
+    event.preventDefault();
+    const fd = new FormData(event.target);
+    const body = {
+        type: fd.get('type'),
+        title: fd.get('title'),
+        titleAr: fd.get('titleAr') || undefined,
+        levelId: fd.get('levelId') || undefined,
+        language: 'english',
+        points: parseInt(fd.get('points')) || 10,
+        cognitiveCategory: fd.get('cognitiveCategory') || 'visual',
+        content: {
+            prompt: fd.get('prompt'),
+            correctAnswer: fd.get('correctAnswer'),
+            options: fd.get('options').split(',').map(s => s.trim()),
+            optionIcons: fd.get('optionIcons').split(',').map(s => s.trim()),
+            optionLabels: fd.get('optionLabels').split(',').map(s => s.trim()),
+        },
+    };
+    try {
+        await apiRequest('/activities', { method: 'POST', body: JSON.stringify(body) });
+        showToast('Activity created!');
+        closeModal();
+        loadActivities();
+    } catch (e) { /* handled */ }
+}
+
+async function saveStory(event) {
+    event.preventDefault();
+    const fd = new FormData(event.target);
+    let questions;
+    try { questions = JSON.parse(fd.get('questionsJson')); }
+    catch (e) { showToast('Invalid JSON', 'error'); return; }
+
+    const body = {
+        type: 'story',
+        title: fd.get('title'),
+        titleAr: fd.get('titleAr') || undefined,
+        levelId: fd.get('levelId') || undefined,
+        language: 'english',
+        points: parseInt(fd.get('points')) || 15,
+        cognitiveCategory: 'comprehension',
+        content: {
+            pages: fd.get('pages').split('\n').map(s => s.trim()).filter(Boolean),
+            questions,
+        },
+    };
+    try {
+        await apiRequest('/activities', { method: 'POST', body: JSON.stringify(body) });
+        showToast('Story created!');
+        closeModal();
+        loadStories();
+    } catch (e) { /* handled */ }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Check authentication
     const authToken = getAuthToken();

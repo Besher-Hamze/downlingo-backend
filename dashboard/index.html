@@ -27,9 +27,13 @@
                 <i class="fas fa-book"></i>
                 <span>Words</span>
             </a>
-            <a href="#" class="nav-item" data-section="exercises">
-                <i class="fas fa-dumbbell"></i>
-                <span>Exercises</span>
+            <a href="#" class="nav-item" data-section="activities">
+                <i class="fas fa-puzzle-piece"></i>
+                <span>Activities</span>
+            </a>
+            <a href="#" class="nav-item" data-section="stories">
+                <i class="fas fa-book-open"></i>
+                <span>Stories</span>
             </a>
             <a href="#" class="nav-item" data-section="users">
                 <i class="fas fa-users"></i>
@@ -103,6 +107,15 @@
                     </div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fas fa-puzzle-piece"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="totalActivities">0</h3>
+                        <p>Activities</p>
+                    </div>
+                </div>
+                <div class="stat-card">
                     <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
                         <i class="fas fa-chart-line"></i>
                     </div>
@@ -168,28 +181,56 @@
             </div>
         </section>
 
-        <!-- Exercises Section -->
-        <section id="exercises" class="content-section">
+        <!-- Activities Section (Shapes & Colors) -->
+        <section id="activities" class="content-section">
             <div class="section-header">
-                <h3>Manage Exercises</h3>
-                <p>Create and manage exercises for practice</p>
+                <h3>Shapes & Colors Activities</h3>
+                <p>Visual matching activities for cognitive assessment</p>
+            </div>
+            <div class="filter-bar" style="margin-bottom:1rem;display:flex;gap:0.5rem;">
+                <button class="btn-secondary" onclick="filterActivities('all')">All</button>
+                <button class="btn-secondary" onclick="filterActivities('shapes')">🔷 Shapes</button>
+                <button class="btn-secondary" onclick="filterActivities('colors')">🎨 Colors</button>
             </div>
             <div class="table-container">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Word</th>
-                            <th>Arabic</th>
-                            <th>Difficulty</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Level</th>
+                            <th>Points</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activitiesTableBody">
+                        <tr><td colspan="6" class="loading">Loading activities...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Stories Section -->
+        <section id="stories" class="content-section">
+            <div class="section-header">
+                <h3>Stories with Questions</h3>
+                <p>Short stories with multiple-choice comprehension questions</p>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Pages</th>
+                            <th>Questions</th>
                             <th>Category</th>
                             <th>Points</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="exercisesTableBody">
-                        <tr>
-                            <td colspan="6" class="loading">Loading exercises...</td>
-                        </tr>
+                    <tbody id="storiesTableBody">
+                        <tr><td colspan="6" class="loading">Loading stories...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -225,14 +266,11 @@
         <!-- Statistics Section -->
         <section id="statistics" class="content-section">
             <div class="section-header">
-                <h3>Statistics Overview</h3>
-                <p>View learning progress and analytics</p>
+                <h3>Student Cognitive Profiles</h3>
+                <p>View weakness areas: memory, pronunciation, visual, comprehension</p>
             </div>
-            <div class="stats-content">
-                <div class="chart-container">
-                    <h4>Progress by Level</h4>
-                    <canvas id="progressChart"></canvas>
-                </div>
+            <div id="statisticsContent" class="stats-content">
+                <div class="loading">Loading student profiles...</div>
             </div>
         </section>
 

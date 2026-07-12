@@ -194,5 +194,118 @@ export class UsersService {
     normalized.setHours(0, 0, 0, 0);
     return normalized;
   }
+
+  async updateCognitiveWeakness(
+    studentId: string,
+    category: string,
+    accuracy: number,
+    wrongAnswers?: string[],
+  ) {
+    const user = await this.userModel.findById(studentId);
+    if (!user || !category) return;
+
+    const weaknessesObj: Record<string, number> = {};
+    if (user.cognitiveWeaknesses) {
+      for (const [key, value] of user.cognitiveWeaknesses.entries()) {
+        weaknessesObj[key] = value;
+      }
+    }
+
+    // Low accuracy increases weakness score
+    if (accuracy < 0.7) {
+      const penalty = accuracy < 0.4 ? 2 : 1;
+      weaknessesObj[category] = (weaknessesObj[category] || 0) + penalty;
+    } else if (accuracy >= 0.85) {
+      // Good performance slightly reduces weakness
+      if (weaknessesObj[category] > 0) {
+        weaknessesObj[category] = Math.max(0, weaknessesObj[category] - 1);
+      }
+    }
+
+    user.cognitiveWeaknesses = weaknessesObj as any;
+    await user.save();
+  }
+
+  async getCognitiveProfile(studentId: string) {
+    const user = await this.userModel.findById(studentId).select('-password').exec();
+    if (!user) return null;
+
+    const weaknessesObj: Record<string, number> = {};
+    if (user.cognitiveWeaknesses) {
+      for (const [key, value] of user.cognitiveWeaknesses.entries()) {
+        weaknessesObj[key] = value;
+      }
+    }
+
+    const weakPhonemesObj: Record<string, number> = {};
+    if (user.weakPhonemes) {
+      for (const [key, value] of user.weakPhonemes.entries()) {
+        weakPhonemesObj[key] = value;
+      }
+    }
+
+    const categories = ['memory', 'comprehension', 'visual', 'pronunciation'];
+    const profile = categories.map((cat) => ({
+      category: cat,
+      score: weaknessesObj[cat] || 0,
+      level: this.getWeaknessLevel(weaknessesObj[cat] || 0),
+    }));
+
+    const sorted = [...profile].sort((a, b) => b.score - a.score);
+    const primaryWeakness = sorted.find((p) => p.score > 0)?.category || null;
+
+    return {
+      profile,
+      primaryWeakness,
+      weakPhonemes: Object.entries(weakPhonemesObj)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([phoneme, count]) => ({ phoneme, count })),
+      recommendations: this.buildRecommendations(sorted, weakPhonemesObj),
+    };
+  }
+
+  private getWeaknessLevel(score: number): string {
+    if (score === 0) return 'strong';
+    if (score <= 2) return 'mild';
+    if (score <= 5) return 'moderate';
+    return 'needs_focus';
+  }
+
+  private buildRecommendations(
+    profile: { category: string; score: number; level: string }[],
+    weakPhonemes: Record<string, number>,
+  ): string[] {
+    const recs: string[] = [];
+    const top = profile.filter((p) => p.score > 0).slice(0, 2);
+
+    for (const item of top) {
+      switch (item.category) {
+        case 'memory':
+          recs.push('Practice short stories and repeat key words');
+          break;
+        case 'comprehension':
+          recs.push('Read stories together and ask simple questions');
+          break;
+        case 'visual':
+          recs.push('Play shapes and colors matching games daily');
+          break;
+        case 'pronunciation':
+          recs.push('Focus on speech exercises with slow repetition');
+          break;
+      }
+    }
+
+    const topPhoneme = Object.entries(weakPhonemes).sort((a, b) => b[1] - a[1])[0];
+    if (topPhoneme) {
+      recs.push(`Practice sounds: /${topPhoneme[0]}/`);
+    }
+
+    if (recs.length === 0) {
+      recs.push('Great progress! Keep practicing a little every day');
+    }
+
+    return recs.slice(0, 3);
+  }
 }
 

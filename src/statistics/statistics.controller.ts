@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { StatisticsService } from './statistics.service';
 import { CreateProgressDto } from './dto/create-progress.dto';
+import { CreateActivityProgressDto } from './dto/create-activity-progress.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -119,6 +120,47 @@ export class StatisticsController {
   @Roles(UserRole.STUDENT)
   async getMyStreak(@CurrentUser() user: any) {
     return this.usersService.getEngagement(user.userId);
+  }
+
+  @Post('activity-progress')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.STUDENT)
+  async recordActivityProgress(
+    @Body() dto: CreateActivityProgressDto,
+    @CurrentUser() user: any,
+  ) {
+    const studentId = user.userId || dto.studentId;
+    if (dto.pointsEarned !== undefined && dto.pointsEarned < 0) {
+      dto.pointsEarned = 0;
+    }
+    return this.statisticsService.recordActivityProgress({ ...dto, studentId });
+  }
+
+  @Get('cognitive-profile')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.STUDENT)
+  getMyCognitiveProfile(@CurrentUser() user: any) {
+    return this.statisticsService.getCognitiveProfile(user.userId);
+  }
+
+  @Get('student/:studentId/cognitive-profile')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.STUDENT, UserRole.FAMILY, UserRole.ADMIN)
+  async getStudentCognitiveProfile(
+    @Param('studentId') studentId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (user.role === UserRole.STUDENT && user.userId !== studentId) {
+      throw new Error('Unauthorized');
+    }
+    if (user.role === UserRole.FAMILY) {
+      const students = await this.usersService.getStudentsForFamily(user.userId);
+      const hasAccess = students.some(
+        (s: any) => (s._id || s.id)?.toString() === studentId,
+      );
+      if (!hasAccess) throw new Error('Unauthorized');
+    }
+    return this.statisticsService.getCognitiveProfile(studentId);
   }
 }
 

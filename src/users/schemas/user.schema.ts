@@ -53,6 +53,10 @@ export class User {
   // Tracks which phonemes the student struggles with most
   @Prop({ type: Map, of: Number, default: {} })
   weakPhonemes: Map<string, number>;
+
+  // Tracks cognitive weakness areas: memory, visual, comprehension, pronunciation
+  @Prop({ type: Map, of: Number, default: {} })
+  cognitiveWeaknesses: Map<string, number>;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

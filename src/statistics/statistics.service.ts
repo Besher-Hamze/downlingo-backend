@@ -2,13 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Progress, ProgressDocument } from './schemas/progress.schema';
+import {
+  ActivityProgress,
+  ActivityProgressDocument,
+} from './schemas/activity-progress.schema';
 import { CreateProgressDto } from './dto/create-progress.dto';
+import { CreateActivityProgressDto } from './dto/create-activity-progress.dto';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class StatisticsService {
   constructor(
     @InjectModel(Progress.name) private progressModel: Model<ProgressDocument>,
+    @InjectModel(ActivityProgress.name)
+    private activityProgressModel: Model<ActivityProgressDocument>,
     private usersService: UsersService,
   ) {}
 
@@ -241,6 +248,113 @@ export class StatisticsService {
         updatedAt: p.updatedAt || p.createdAt,
       };
     });
+  }
+
+  async recordActivityProgress(dto: CreateActivityProgressDto) {
+    const existing = await this.activityProgressModel.findOne({
+      studentId: dto.studentId,
+      activityId: dto.activityId,
+    });
+
+    let progress: ActivityProgressDocument;
+
+    if (existing) {
+      const wasCompleted = existing.isCompleted;
+      existing.accuracy = dto.accuracy;
+      existing.attempts = (existing.attempts || 0) + 1;
+      existing.isCompleted = dto.isCompleted || existing.isCompleted;
+      existing.cognitiveCategory = dto.cognitiveCategory || existing.cognitiveCategory;
+      if (dto.wrongAnswers?.length) {
+        existing.wrongAnswers = dto.wrongAnswers;
+      }
+
+      if (dto.pointsEarned && dto.pointsEarned > 0) {
+        if (!wasCompleted && existing.isCompleted) {
+          existing.pointsEarned = (existing.pointsEarned || 0) + dto.pointsEarned;
+        } else if (!wasCompleted) {
+          existing.pointsEarned = (existing.pointsEarned || 0) + dto.pointsEarned;
+        }
+      }
+
+      progress = await existing.save();
+    } else {
+      progress = await new this.activityProgressModel({
+        ...dto,
+        attempts: 1,
+        pointsEarned: dto.pointsEarned || 0,
+      }).save();
+    }
+
+    const engagement = await this.usersService.updateEngagementOnPractice(
+      dto.studentId,
+    );
+
+    if (dto.cognitiveCategory) {
+      await this.usersService.updateCognitiveWeakness(
+        dto.studentId,
+        dto.cognitiveCategory,
+        dto.accuracy,
+        dto.wrongAnswers,
+      );
+    }
+
+    const cognitiveProfile = await this.usersService.getCognitiveProfile(
+      dto.studentId,
+    );
+
+    return {
+      ...(progress as any).toObject ? (progress as any).toObject() : progress,
+      engagement,
+      cognitiveProfile,
+      message: 'Activity progress recorded',
+    };
+  }
+
+  async getStudentActivityProgress(studentId: string) {
+    return this.activityProgressModel
+      .find({ studentId })
+      .populate('activityId')
+      .sort({ updatedAt: -1 })
+      .exec();
+  }
+
+  async getCognitiveProfile(studentId: string) {
+    const profile = await this.usersService.getCognitiveProfile(studentId);
+    const speechStats = await this.getStudentStatistics(studentId);
+    const activityProgress = await this.activityProgressModel
+      .find({ studentId })
+      .exec();
+
+    const byType = activityProgress.reduce(
+      (acc, p) => {
+        const type = p.activityType || 'unknown';
+        if (!acc[type]) {
+          acc[type] = { total: 0, completed: 0, avgAccuracy: 0, sum: 0 };
+        }
+        acc[type].total += 1;
+        acc[type].sum += p.accuracy;
+        if (p.isCompleted) acc[type].completed += 1;
+        return acc;
+      },
+      {} as Record<string, { total: number; completed: number; avgAccuracy: number; sum: number }>,
+    );
+
+    Object.keys(byType).forEach((key) => {
+      byType[key].avgAccuracy =
+        byType[key].total > 0 ? byType[key].sum / byType[key].total : 0;
+    });
+
+    return {
+      ...profile,
+      speechStats: {
+        totalWords: speechStats.totalWords,
+        completedWords: speechStats.completedWords,
+        averageAccuracy: speechStats.averageAccuracy,
+        totalPoints: speechStats.totalPoints,
+      },
+      activityBreakdown: byType,
+      engagement: speechStats.engagement,
+    };
   }
 }
 
