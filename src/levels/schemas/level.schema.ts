@@ -3,6 +3,13 @@ import { Document } from 'mongoose';
 
 export type LevelDocument = Level & Document;
 
+export enum LevelType {
+  SPEECH = 'speech',
+  STORY = 'story',
+  SHAPES = 'shapes',
+  COLORS = 'colors',
+}
+
 @Schema({ timestamps: true })
 export class Level {
   @Prop({ required: true })
@@ -25,6 +32,9 @@ export class Level {
 
   @Prop({ required: true })
   language: string; // 'english' or 'arabic'
+
+  @Prop({ enum: LevelType, default: LevelType.SPEECH })
+  levelType: LevelType;
 
   @Prop({ default: true })
   isActive: boolean;

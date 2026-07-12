@@ -194,6 +194,7 @@ async function loadLevels() {
                 <td><strong>${level.name}</strong></td>
                 <td>${level.levelNumber}</td>
                 <td><span class="status-badge active">${level.language}</span></td>
+                <td><span class="status-badge active">${level.levelType || 'speech'}</span></td>
                 <td>${level.requiredPoints}</td>
                 <td><span class="status-badge ${level.isActive ? 'active' : 'inactive'}">${level.isActive ? 'Active' : 'Inactive'}</span></td>
                 <td>
@@ -948,6 +949,15 @@ function getLevelForm(level = null) {
                 <select name="language" required>
                     <option value="english" ${level?.language === 'english' ? 'selected' : ''}>English</option>
                     <option value="arabic" ${level?.language === 'arabic' ? 'selected' : ''}>Arabic</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Level Type *</label>
+                <select name="levelType" required>
+                    <option value="speech" ${!level?.levelType || level?.levelType === 'speech' ? 'selected' : ''}>Speech</option>
+                    <option value="story" ${level?.levelType === 'story' ? 'selected' : ''}>Story</option>
+                    <option value="shapes" ${level?.levelType === 'shapes' ? 'selected' : ''}>Shapes</option>
+                    <option value="colors" ${level?.levelType === 'colors' ? 'selected' : ''}>Colors</option>
                 </select>
             </div>
             <div class="form-actions">
